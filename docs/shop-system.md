@@ -64,6 +64,16 @@ Demo data: `npm run shop:seed` adds clearly labelled DEMO records to an empty da
 
 Tests: `npm test` runs the business-rule suite (money, dates, totals, phone numbers, sessions, CSV) and an end-to-end flow on an in-memory database: order, credit override, dispatch, short delivery, invoice, FIFO payments, advances, void, cancellation, dips, aging and ledger reconciliation.
 
+## Hosting
+
+The shop needs a server with a writable disk, because its data lives in a SQLite file. Vercel's serverless functions cannot keep that file, so the shop cannot run there.
+
+- On Vercel (any environment where `VERCEL` is set), `/shop`, `/api/shop` and the public invoice links under `/share` return "Not found". This is deliberate: without it, a signed-in user gets an error page once the database cannot be opened.
+- To turn the shop on there anyway, set `SHOP_ENABLED=true`. Only do this after storage is solved, because the data would not persist.
+- Locally, and on any server you control, the shop is always on.
+
+The sensible options are: run the shop on a machine you control, or move its storage to a managed database after the change is approved.
+
 ## Data and backups
 
 - Database: `data/shop.sqlite` (SQLite with WAL). Git-ignored. Set `SHOP_DB_PATH` to move it.
