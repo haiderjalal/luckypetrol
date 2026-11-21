@@ -29,9 +29,9 @@ const EXPORTS = [
 
 export default async function ReportsPage({ searchParams }) {
   const params = await searchParams;
-  const period = resolvePeriod({ from: readParam(params.from), to: readParam(params.to) });
-  const summary = getReportSummary(period);
-  const taxRateBps = getSettings().billing.taxRateBps;
+  const period = await resolvePeriod({ from: readParam(params.from), to: readParam(params.to) });
+  const summary = await getReportSummary(period);
+  const taxRateBps = (await getSettings()).billing.taxRateBps;
   const exportQuery = `from=${period.from}&to=${period.to}`;
   const collectedPaisa = summary.collections.reduce((sum, row) => sum + row.amountPaisa, 0);
   const receiptCount = summary.collections.reduce((sum, row) => sum + row.receipts, 0);

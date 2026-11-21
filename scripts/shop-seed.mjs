@@ -1,7 +1,8 @@
 // Adds DEMO data so the shop can be tried locally. Every record is labelled DEMO.
-// Runs only on an empty database. To start again, stop the server and delete data/shop.sqlite.
+// Runs only on an empty test database. To start again, reset the test database (section 8 of docs/supabase-setup.md).
 
-import { getDb } from "../lib/shop/db.js";
+import { closeSql, getSql } from "../lib/shop/db.js";
+import { useTestDatabase } from "../lib/shop/testDatabase.js";
 import { todayIso } from "../lib/shop/dates.js";
 import { parseInput } from "../lib/shop/validation/parse.js";
 import { customerSchema, siteSchema } from "../lib/shop/validation/customers.js";
@@ -60,112 +61,117 @@ function orderFor(customerId, { litresPMG = "", litresHSD = "", litresHOBC = "",
   });
 }
 
-function main() {
-  const db = getDb();
-  const existing = db.prepare("SELECT COUNT(*) AS total FROM customers").get().total;
-  if (existing > 0) {
-    console.error("The database already has customers, so the DEMO seed was not run.");
-    console.error("To start again, stop the server and delete data/shop.sqlite.");
-    process.exitCode = 1;
-    return;
+async function main() {
+  useTestDatabase();
+  const sql = getSql();
+  try {
+    const [{ total: existing }] = await sql`SELECT COUNT(*) AS total FROM shop.customers`;
+    if (existing > 0) {
+      console.error("The database already has customers, so the DEMO seed was not run.");
+      console.error("To start again, reset the test database (section 8 of docs/supabase-setup.md).");
+      process.exitCode = 1;
+      return;
+    }
+
+    console.info("Setting today's rate card (DEMO rates)...");
+    await setRate(parseInput(rateSchema, { productCode: "PMG", rate: "377.71", effectiveFrom: today }), ACTOR);
+    await setRate(parseInput(rateSchema, { productCode: "HSD", rate: "391.75", effectiveFrom: today }), ACTOR);
+    await setRate(parseInput(rateSchema, { productCode: "HOBC", rate: "350.00", effectiveFrom: today }), ACTOR);
+
+    console.info("Creating a DEMO depot and tanks...");
+    await createDepot(parseInput(depotSchema, { code: "DEMO", name: "DEMO depot", location: "Placeholder location" }), ACTOR);
+    const [{ id: depotId }] = await sql`SELECT id FROM shop.depots WHERE code = 'DEMO'`;
+    const tanks = [
+      ["DEMO PMG-1", "PMG", "500000", "400000"],
+      ["DEMO HSD-1", "HSD", "500000", "400000"],
+      ["DEMO HOBC-1", "HOBC", "200000", "100000"],
+    ];
+    for (const [name, productCode, capacity, stock] of tanks) {
+      await createTank(parseInput(tankSchema, { depotId: String(depotId), name, productCode, capacityLitres: capacity }), ACTOR);
+      const [{ id: tankId }] = await sql`SELECT id FROM shop.tanks WHERE name = ${name}`;
+      await receiveStock(parseInput(receiptSchema, { tankId: String(tankId), litres: stock, reference: "DEMO challan", occurredOn: today }), ACTOR);
+    }
+
+    console.info("Adding DEMO customers...");
+    const station = idOf(await createCustomer(parseInput(customerSchema, customerInput({
+      name: "DEMO – Sample filling station",
+      customerType: "dealer",
+      address: "Plot 12, Sector 5, Karachi",
+      creditLimit: "5000000",
+      paymentTermsDays: "7",
+    })), ACTOR));
+    await addCustomerSite(parseInput(siteSchema, { customerId: String(station), label: "DEMO Pump 1", address: "Landhi Industrial Area", city: "Karachi", contactName: "", contactPhone: "" }), ACTOR);
+
+    const bank = idOf(await createCustomer(parseInput(customerSchema, customerInput({
+      name: "DEMO – City bank branch",
+      customerType: "bank",
+      address: "DEMO branch, Clifton",
+      creditLimit: "20000000",
+      discount: "0.50",
+      paymentTermsDays: "30",
+    })), ACTOR));
+
+    const vendor = idOf(await createCustomer(parseInput(customerSchema, customerInput({
+      name: "DEMO – Corner shop vendor",
+      customerType: "shop_owner",
+      address: "Shop 4, Main Market",
+      whatsapp: "0300 1234567",
+      creditLimit: "0",
+      discount: "2",
+      paymentTermsDays: "14",
+    })), ACTOR));
+
+    const restaurant = idOf(await createCustomer(parseInput(customerSchema, customerInput({
+      name: "DEMO – Restaurant and grill",
+      customerType: "restaurant",
+      address: "DEMO road, Gulshan",
+      creditLimit: "500000",
+    })), ACTOR));
+
+    const courier = idOf(await createCustomer(parseInput(customerSchema, customerInput({
+      name: "DEMO – Logistics courier",
+      customerType: "logistics",
+      address: "DEMO warehouse, SITE",
+      creditLimit: "10000000",
+      paymentTermsDays: "15",
+    })), ACTOR));
+
+    console.info("Taking DEMO orders and running them through to invoices...");
+    const stationOrder = (await createOrder(orderFor(station, { litresPMG: "5000", litresHSD: "3000", address: "Plot 12, Sector 5, Karachi" }), ACTOR)).id;
+    await confirmOrder({ orderId: stationOrder, overrideNote: "" }, ACTOR);
+    const stationLoad = await dispatchOrder(parseInput(dispatchSchema, { orderId: String(stationOrder), depotId: String(depotId), vehicleNo: "DEMO-1001", driverName: "DEMO driver", driverPhone: "", sealNumbers: "DEMO-S1" }), ACTOR);
+    await completeDelivery(parseInput(deliverySchema, { deliveryId: String(stationLoad.id), deliveredOn: today, deliveredPMG: "5000", deliveredHSD: "3000", deliveredHOBC: "0" }), ACTOR);
+    await createInvoiceFromOrder({ orderId: stationOrder }, ACTOR);
+    await recordPayment(parseInput(paymentSchema, { customerId: String(station), amount: "2000000", method: "bank_transfer", reference: "DEMO transfer", bankName: "DEMO bank", receivedOn: today, notes: "" }), ACTOR);
+
+    const courierOrder = (await createOrder(orderFor(courier, { litresHSD: "12000", address: "DEMO warehouse, SITE" }), ACTOR)).id;
+    await confirmOrder({ orderId: courierOrder, overrideNote: "" }, ACTOR);
+    const courierLoad = await dispatchOrder(parseInput(dispatchSchema, { orderId: String(courierOrder), depotId: String(depotId), vehicleNo: "DEMO-2002", driverName: "", driverPhone: "", sealNumbers: "" }), ACTOR);
+    await completeDelivery(parseInput(deliverySchema, { deliveryId: String(courierLoad.id), deliveredOn: today, deliveredPMG: "0", deliveredHSD: "12000", deliveredHOBC: "0" }), ACTOR);
+    await createInvoiceFromOrder({ orderId: courierOrder }, ACTOR);
+    await recordPayment(parseInput(paymentSchema, { customerId: String(courier), amount: "4701000", method: "cheque", reference: "DEMO cheque 001", bankName: "DEMO bank", receivedOn: today, notes: "" }), ACTOR);
+
+    const bankOrder = (await createOrder(orderFor(bank, { litresHSD: "8000", address: "DEMO branch, Clifton" }), ACTOR)).id;
+    await confirmOrder({ orderId: bankOrder, overrideNote: "" }, ACTOR);
+    await dispatchOrder(parseInput(dispatchSchema, { orderId: String(bankOrder), depotId: String(depotId), vehicleNo: "DEMO-3003", driverName: "", driverPhone: "", sealNumbers: "" }), ACTOR);
+
+    const vendorOrder = (await createOrder(orderFor(vendor, { litresHOBC: "500", address: "Shop 4, Main Market" }), ACTOR)).id;
+    await confirmOrder({ orderId: vendorOrder, overrideNote: "DEMO approval for a cash-on-delivery top-up" }, ACTOR);
+
+    const restaurantOrder = (await createOrder(orderFor(restaurant, { litresPMG: "300", address: "DEMO road, Gulshan" }), ACTOR)).id;
+    const cancelled = (await createOrder(orderFor(restaurant, { litresPMG: "100", address: "DEMO road, Gulshan" }), ACTOR)).id;
+    await cancelOrder({ orderId: cancelled, reason: "DEMO: customer changed the quantity" }, ACTOR);
+
+    console.info("");
+    console.info("DEMO data added:");
+    console.info("  - 5 customers (DEMO), 1 delivery site, 1 depot with 3 tanks");
+    console.info("  - 2 invoices fully or partly paid, 1 order on the road, 1 confirmed order awaiting loading, 1 received order");
+    console.info(`  - rates set for ${today}`);
+    console.info(`  - order ${restaurantOrder} is the received order to confirm; order ${cancelled} shows a cancelled order`);
+    console.info("Sign in at http://localhost:3000/shop with the username and password from .env.local.");
+  } finally {
+    await closeSql();
   }
-
-  console.info("Setting today's rate card (DEMO rates)...");
-  setRate(parseInput(rateSchema, { productCode: "PMG", rate: "377.71", effectiveFrom: today }), ACTOR);
-  setRate(parseInput(rateSchema, { productCode: "HSD", rate: "391.75", effectiveFrom: today }), ACTOR);
-  setRate(parseInput(rateSchema, { productCode: "HOBC", rate: "350.00", effectiveFrom: today }), ACTOR);
-
-  console.info("Creating a DEMO depot and tanks...");
-  createDepot(parseInput(depotSchema, { code: "DEMO", name: "DEMO depot", location: "Placeholder location" }), ACTOR);
-  const depotId = db.prepare("SELECT id FROM depots WHERE code = 'DEMO'").get().id;
-  const tanks = [
-    ["DEMO PMG-1", "PMG", "500000", "400000"],
-    ["DEMO HSD-1", "HSD", "500000", "400000"],
-    ["DEMO HOBC-1", "HOBC", "200000", "100000"],
-  ];
-  for (const [name, productCode, capacity, stock] of tanks) {
-    createTank(parseInput(tankSchema, { depotId: String(depotId), name, productCode, capacityLitres: capacity }), ACTOR);
-    const tankId = db.prepare("SELECT id FROM tanks WHERE name = ?").get(name).id;
-    receiveStock(parseInput(receiptSchema, { tankId: String(tankId), litres: stock, reference: "DEMO challan", occurredOn: today }), ACTOR);
-  }
-
-  console.info("Adding DEMO customers...");
-  const station = idOf(createCustomer(parseInput(customerSchema, customerInput({
-    name: "DEMO – Sample filling station",
-    customerType: "dealer",
-    address: "Plot 12, Sector 5, Karachi",
-    creditLimit: "5000000",
-    paymentTermsDays: "7",
-  })), ACTOR));
-  addCustomerSite(parseInput(siteSchema, { customerId: String(station), label: "DEMO Pump 1", address: "Landhi Industrial Area", city: "Karachi", contactName: "", contactPhone: "" }), ACTOR);
-
-  const bank = idOf(createCustomer(parseInput(customerSchema, customerInput({
-    name: "DEMO – City bank branch",
-    customerType: "bank",
-    address: "DEMO branch, Clifton",
-    creditLimit: "20000000",
-    discount: "0.50",
-    paymentTermsDays: "30",
-  })), ACTOR));
-
-  const vendor = idOf(createCustomer(parseInput(customerSchema, customerInput({
-    name: "DEMO – Corner shop vendor",
-    customerType: "shop_owner",
-    address: "Shop 4, Main Market",
-    whatsapp: "0300 1234567",
-    creditLimit: "0",
-    discount: "2",
-    paymentTermsDays: "14",
-  })), ACTOR));
-
-  const restaurant = idOf(createCustomer(parseInput(customerSchema, customerInput({
-    name: "DEMO – Restaurant and grill",
-    customerType: "restaurant",
-    address: "DEMO road, Gulshan",
-    creditLimit: "500000",
-  })), ACTOR));
-
-  const courier = idOf(createCustomer(parseInput(customerSchema, customerInput({
-    name: "DEMO – Logistics courier",
-    customerType: "logistics",
-    address: "DEMO warehouse, SITE",
-    creditLimit: "10000000",
-    paymentTermsDays: "15",
-  })), ACTOR));
-
-  console.info("Taking DEMO orders and running them through to invoices...");
-  const stationOrder = createOrder(orderFor(station, { litresPMG: "5000", litresHSD: "3000", address: "Plot 12, Sector 5, Karachi" }), ACTOR).id;
-  confirmOrder({ orderId: stationOrder, overrideNote: "" }, ACTOR);
-  const stationLoad = dispatchOrder(parseInput(dispatchSchema, { orderId: String(stationOrder), depotId: String(depotId), vehicleNo: "DEMO-1001", driverName: "DEMO driver", driverPhone: "", sealNumbers: "DEMO-S1" }), ACTOR);
-  completeDelivery(parseInput(deliverySchema, { deliveryId: String(stationLoad.id), deliveredOn: today, deliveredPMG: "5000", deliveredHSD: "3000", deliveredHOBC: "0" }), ACTOR);
-  createInvoiceFromOrder({ orderId: stationOrder }, ACTOR);
-  recordPayment(parseInput(paymentSchema, { customerId: String(station), amount: "2000000", method: "bank_transfer", reference: "DEMO transfer", bankName: "DEMO bank", receivedOn: today, notes: "" }), ACTOR);
-
-  const courierOrder = createOrder(orderFor(courier, { litresHSD: "12000", address: "DEMO warehouse, SITE" }), ACTOR).id;
-  confirmOrder({ orderId: courierOrder, overrideNote: "" }, ACTOR);
-  const courierLoad = dispatchOrder(parseInput(dispatchSchema, { orderId: String(courierOrder), depotId: String(depotId), vehicleNo: "DEMO-2002", driverName: "", driverPhone: "", sealNumbers: "" }), ACTOR);
-  completeDelivery(parseInput(deliverySchema, { deliveryId: String(courierLoad.id), deliveredOn: today, deliveredPMG: "0", deliveredHSD: "12000", deliveredHOBC: "0" }), ACTOR);
-  createInvoiceFromOrder({ orderId: courierOrder }, ACTOR);
-  recordPayment(parseInput(paymentSchema, { customerId: String(courier), amount: "4701000", method: "cheque", reference: "DEMO cheque 001", bankName: "DEMO bank", receivedOn: today, notes: "" }), ACTOR);
-
-  const bankOrder = createOrder(orderFor(bank, { litresHSD: "8000", address: "DEMO branch, Clifton" }), ACTOR).id;
-  confirmOrder({ orderId: bankOrder, overrideNote: "" }, ACTOR);
-  dispatchOrder(parseInput(dispatchSchema, { orderId: String(bankOrder), depotId: String(depotId), vehicleNo: "DEMO-3003", driverName: "", driverPhone: "", sealNumbers: "" }), ACTOR);
-
-  const vendorOrder = createOrder(orderFor(vendor, { litresHOBC: "500", address: "Shop 4, Main Market" }), ACTOR).id;
-  confirmOrder({ orderId: vendorOrder, overrideNote: "DEMO approval for a cash-on-delivery top-up" }, ACTOR);
-
-  const restaurantOrder = createOrder(orderFor(restaurant, { litresPMG: "300", address: "DEMO road, Gulshan" }), ACTOR).id;
-  const cancelled = createOrder(orderFor(restaurant, { litresPMG: "100", address: "DEMO road, Gulshan" }), ACTOR).id;
-  cancelOrder({ orderId: cancelled, reason: "DEMO: customer changed the quantity" }, ACTOR);
-
-  console.info("");
-  console.info("DEMO data added:");
-  console.info("  - 5 customers (DEMO), 1 delivery site, 1 depot with 3 tanks");
-  console.info("  - 2 invoices fully or partly paid, 1 order on the road, 1 confirmed order awaiting loading, 1 received order");
-  console.info(`  - rates set for ${today}`);
-  console.info(`  - order ${restaurantOrder} is the received order to confirm; order ${cancelled} shows a cancelled order`);
-  console.info("Sign in at http://localhost:3000/shop with the username and password from .env.local.");
 }
 
-main();
+await main();

@@ -32,7 +32,7 @@ export default async function PaymentDetailPage({ params }) {
 
   let detail;
   try {
-    detail = getPaymentDetail(paymentId);
+    detail = await getPaymentDetail(paymentId);
   } catch (error) {
     if (error?.code === "not_found") {
       notFound();
@@ -41,7 +41,7 @@ export default async function PaymentDetailPage({ params }) {
   }
 
   const { payment, allocations, customerBalancePaisa } = detail;
-  const company = getSettings().company;
+  const company = (await getSettings()).company;
   const isPosted = payment.status === "posted";
 
   return (

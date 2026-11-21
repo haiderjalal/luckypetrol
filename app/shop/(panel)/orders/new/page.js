@@ -18,8 +18,8 @@ export const metadata = {
 export default async function NewOrderPage({ searchParams }) {
   const params = await searchParams;
   const today = todayIso();
-  const customers = getOrderFormOptions();
-  const rateCard = getRateCard(today);
+  const customers = await getOrderFormOptions();
+  const rateCard = await getRateCard(today);
   const rates = Object.fromEntries(rateCard.products.map((product) => [product.productCode, product.ratePaisa]));
   const hasAllRates = Object.values(rates).every((value) => value !== null);
 

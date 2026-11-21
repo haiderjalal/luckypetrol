@@ -29,7 +29,7 @@ export default async function PaymentsPage({ searchParams }) {
     customerId: readParam(params.customer),
     page: readParam(params.page),
   };
-  const result = listPayments(filters);
+  const result = await listPayments(filters);
   const query = { search: filters.search, method: filters.method, status: filters.status, from: filters.from, to: filters.to, customer: filters.customerId };
   const exportParams = new URLSearchParams({ report: "payments" });
   if (filters.from) exportParams.set("from", filters.from);

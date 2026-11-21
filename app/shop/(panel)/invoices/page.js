@@ -29,7 +29,7 @@ export default async function InvoicesPage({ searchParams }) {
     customerId: readParam(params.customer),
     page: readParam(params.page),
   };
-  const result = listInvoices(filters);
+  const result = await listInvoices(filters);
   const query = {
     search: filters.search,
     status: filters.status,

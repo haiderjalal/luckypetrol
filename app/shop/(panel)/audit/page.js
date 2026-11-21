@@ -13,7 +13,7 @@ export const metadata = {
 
 export default async function AuditPage({ searchParams }) {
   const params = await searchParams;
-  const result = getAuditLog({ page: readParam(params.page) });
+  const result = await getAuditLog({ page: readParam(params.page) });
 
   return (
     <>

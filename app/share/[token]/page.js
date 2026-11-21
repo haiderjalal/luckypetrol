@@ -14,7 +14,7 @@ export const metadata = {
 /** Read-only invoice for a customer. Anyone with the link can view it; the link is unguessable and can be cancelled by cancelling the invoice. */
 export default async function SharedInvoicePage({ params }) {
   const { token } = await params;
-  const shared = getPublicInvoice(token);
+  const shared = await getPublicInvoice(token);
   if (!shared) {
     notFound();
   }

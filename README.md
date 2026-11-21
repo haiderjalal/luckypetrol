@@ -36,13 +36,13 @@ Fuel rates change often. Update `fuelPrices` in `lib/site.js` before each launch
 
 A password-protected system for staff: customers and delivery sites, orders (petrol, diesel, HOBC in litres), credit checks, depot stock and dispatch, invoices with the letterhead, payments and the customer ledger, aging, rate card, reports and an audit log.
 
-1. Node.js 22.13 or newer is required (the database uses the built-in `node:sqlite`).
+1. Set up the Supabase database as described in `docs/supabase-setup.md`. Put its connection string in `SHOP_DATABASE_URL` in `.env.local`.
 2. Copy `.env.example` to `.env.local` and set `SHOP_USERNAME`, `SHOP_PASSWORD` and a `SHOP_SESSION_SECRET` of at least 32 characters.
 3. Run `npm run dev`, then open http://localhost:3000/shop.
-4. Optional: `npm run shop:seed` adds clearly labelled DEMO data to an empty database.
-5. Run the tests with `npm test`.
+4. Optional: `npm run shop:seed` adds clearly labelled DEMO data to an empty test database. It needs `SHOP_TEST_DATABASE_URL` and refuses the live database.
+5. Run the tests with `npm test`. They need `SHOP_TEST_DATABASE_URL` as well.
 
-The database is a local file at `data/shop.sqlite` (git-ignored). Back it up regularly. See `docs/shop-system.md` for how the system works, the rules it applies and what still needs confirming.
+The data lives in Supabase Postgres. Keep the live project on a plan with backups. See `docs/shop-system.md` for how the system works, the rules it applies and what still needs confirming.
 
 ## Deploy (free)
 

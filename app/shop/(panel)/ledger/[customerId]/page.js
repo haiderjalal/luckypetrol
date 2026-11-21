@@ -40,8 +40,8 @@ export default async function CustomerStatementPage({ params, searchParams }) {
   let statement;
   let detail;
   try {
-    statement = getStatement(customerId, { from, to });
-    detail = getCustomerDetail(customerId);
+    statement = await getStatement(customerId, { from, to });
+    detail = await getCustomerDetail(customerId);
   } catch (error) {
     if (error?.code === "not_found") {
       notFound();
@@ -51,7 +51,7 @@ export default async function CustomerStatementPage({ params, searchParams }) {
 
   const { customer, openInvoices } = detail;
   const today = todayIso();
-  const settings = getSettings();
+  const settings = await getSettings();
   const overdueInvoices = openInvoices.filter((invoice) => invoice.dueDate < today);
   const reminder = buildReminderMessage({
     customerName: customer.name,

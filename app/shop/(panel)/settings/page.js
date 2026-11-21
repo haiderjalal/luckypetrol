@@ -27,8 +27,8 @@ function BankFields({ slot, account }) {
   );
 }
 
-export default function SettingsPage() {
-  const { company, billing, operations } = getSettings();
+export default async function SettingsPage() {
+  const { company, billing, operations } = await getSettings();
   const [bank1 = {}, bank2 = {}] = billing.bankAccounts;
 
   return (

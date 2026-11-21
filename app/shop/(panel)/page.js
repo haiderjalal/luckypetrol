@@ -18,10 +18,10 @@ export const metadata = {
   title: "Dashboard",
 };
 
-export default function ShopDashboardPage() {
+export default async function ShopDashboardPage() {
   const today = todayIso();
-  const data = getDashboard(today);
-  const rateCard = getRateCard(today);
+  const data = await getDashboard(today);
+  const rateCard = await getRateCard(today);
   const missingRates = rateCard.products.filter((product) => product.ratePaisa === null).map((product) => product.label);
   const trendMax = Math.max(1, ...data.trend.map((day) => day.totalPaisa));
   const litresThisMonth = data.litresByProduct.reduce((sum, row) => sum + row.litres, 0);

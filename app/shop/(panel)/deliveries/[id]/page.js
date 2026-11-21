@@ -31,7 +31,7 @@ export default async function DeliveryDetailPage({ params }) {
 
   let detail;
   try {
-    detail = getDeliveryDetail(deliveryId);
+    detail = await getDeliveryDetail(deliveryId);
   } catch (error) {
     if (error?.code === "not_found") {
       notFound();
@@ -40,7 +40,7 @@ export default async function DeliveryDetailPage({ params }) {
   }
 
   const { delivery, items } = detail;
-  const company = getSettings().company;
+  const company = (await getSettings()).company;
   const loadedByCode = Object.fromEntries(items.map((item) => [item.productCode, item.loadedLitres]));
   const isInTransit = delivery.status === "in_transit";
 

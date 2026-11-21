@@ -37,13 +37,13 @@ function FillBar({ percent, low }) {
 export default async function InventoryPage({ searchParams }) {
   const params = await searchParams;
   const today = todayIso();
-  const overview = getInventoryOverview();
+  const overview = await getInventoryOverview();
   const tankId = parseOptionalId(readParam(params.tank));
 
   let history = null;
   if (tankId) {
     try {
-      history = getTankHistory(tankId);
+      history = await getTankHistory(tankId);
     } catch (error) {
       if (error?.code === "not_found") {
         notFound();

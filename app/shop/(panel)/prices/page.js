@@ -15,10 +15,10 @@ export const metadata = {
   title: "Rate card",
 };
 
-export default function PricesPage() {
+export default async function PricesPage() {
   const today = todayIso();
-  const card = getRateCard(today);
-  const history = getRateHistory(60);
+  const card = await getRateCard(today);
+  const history = await getRateHistory(60);
   const productOptions = PRODUCT_CODES.map((code) => ({ value: code, label: PRODUCT_LABELS[code] }));
 
   return (
