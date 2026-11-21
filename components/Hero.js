@@ -6,20 +6,26 @@ import { ArrowRightIcon } from "@/components/Icons";
 import { hero } from "@/lib/site";
 import { brand, images } from "@/lib/images";
 
-const EASE = [0.22, 1, 0.36, 1];
+const EASE = [0.16, 1, 0.3, 1];
 
 export default function Hero() {
   const prefersReducedMotion = useReducedMotion();
-  const titleWords = hero.title.split(" ");
 
   return (
     <section className="hero" aria-labelledby="hero-title">
-      <div className="hero__media" aria-hidden="true">
+      <div className="hero__visual" aria-hidden="true">
         {prefersReducedMotion ? (
-          <Image src={images.heroPoster.src} alt="" fill priority sizes="100vw" className="hero__image" />
+          <Image
+            src={images.heroPoster.src}
+            alt=""
+            fill
+            priority
+            sizes="(min-width: 900px) 64vw, 100vw"
+            className="hero__media"
+          />
         ) : (
           <video
-            className="hero__video"
+            className="hero__media"
             src={images.heroVideo.src}
             poster={images.heroPoster.src}
             autoPlay
@@ -29,41 +35,35 @@ export default function Hero() {
             preload="auto"
           />
         )}
-        <div className="hero__shade" />
       </div>
+      <div className="hero__edge" aria-hidden="true" />
 
-      <motion.div
-        className="hero__mark"
-        aria-hidden="true"
-        initial={{ opacity: 0, scale: 0.7, rotate: -25 }}
-        animate={{ opacity: 0.14, scale: 1, rotate: 0 }}
-        transition={{ duration: 1.8, delay: 0.3, ease: EASE }}
-      >
-        <div className="hero__mark-spin">
-          <Image src={brand.icon.src} alt="" fill sizes="(min-width: 900px) 540px, 60vw" />
-        </div>
-      </motion.div>
-
-      <div className="container hero__content">
+      <div className="container hero__inner">
         <motion.p
-          className="eyebrow"
-          initial={{ opacity: 0, y: 16 }}
+          className="hero__eyebrow"
+          initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: EASE }}
+          transition={{ duration: 0.8, delay: 1.1, ease: EASE }}
         >
+          <span className="hero__eyebrow-icon">
+            <Image src={brand.icon.src} alt="" fill sizes="26px" />
+          </span>
           {hero.eyebrow}
         </motion.p>
 
         <h1 id="hero-title" className="hero__title">
-          {titleWords.map((word, index) => (
-            <span key={`${word}-${index}`} className="hero__word">
+          {hero.titleLines.map((line, index) => (
+            <span
+              key={line}
+              className={`hero__line ${index === hero.titleLines.length - 1 ? "hero__line--accent" : ""}`}
+            >
               <motion.span
-                className="hero__word-inner"
-                initial={{ y: "110%" }}
+                className="hero__line-inner"
+                initial={{ y: "105%" }}
                 animate={{ y: "0%" }}
-                transition={{ duration: 0.9, delay: 0.2 + index * 0.08, ease: EASE }}
+                transition={{ duration: 1.1, delay: 0.25 + index * 0.12, ease: EASE }}
               >
-                {word}
+                {line}
               </motion.span>
             </span>
           ))}
@@ -71,16 +71,16 @@ export default function Hero() {
 
         <motion.p
           className="hero__text"
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.75, ease: EASE }}
+          transition={{ duration: 0.9, delay: 0.8, ease: EASE }}
         >
           {hero.text}
         </motion.p>
 
         <motion.div
           className="hero__actions"
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.95, ease: EASE }}
         >
@@ -95,7 +95,7 @@ export default function Hero() {
       </div>
 
       <a href="#about" className="hero__scroll">
-        <span className="visually-hidden">Scroll to About Lucky Petroleum</span>
+        Scroll
       </a>
     </section>
   );
