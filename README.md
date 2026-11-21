@@ -22,6 +22,7 @@ A fast, one-page website for Lucky Petroleum with motion throughout: an animated
 
 - Company copy, contact details, fuel rates, depots, services and stats: `lib/site.js`
 - Photo, logo and video paths: `lib/images.js` (the files live in `public/`)
+- Blog posts: `lib/posts.js` (review the drafts before publishing)
 - Colours and spacing: `app/globals.css` (the `:root` block at the top)
 - Sections: `app/page.js` sets the order; each section lives in `components/`
 

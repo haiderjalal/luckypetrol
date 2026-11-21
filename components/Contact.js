@@ -39,7 +39,7 @@ export default function Contact() {
     <section id="contact" className="section" aria-labelledby="contact-title">
       <div className="container contact">
         <div>
-          <SectionHead number="09" label="Contact" title={contact.title} titleId="contact-title" text={contact.text} />
+          <SectionHead number="10" label="Contact" title={contact.title} titleId="contact-title" text={contact.text} />
 
           <div className="contact__rows">
             {contactRows.map((row) => (

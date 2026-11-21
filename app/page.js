@@ -12,6 +12,7 @@ import Customers from "@/components/Customers";
 import Sustainability from "@/components/Sustainability";
 import Careers from "@/components/Careers";
 import News from "@/components/News";
+import Blog from "@/components/Blog";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 
@@ -34,6 +35,7 @@ export default function Home() {
         <Sustainability />
         <Careers />
         <News />
+        <Blog />
         <Contact />
       </main>
       <Footer />
