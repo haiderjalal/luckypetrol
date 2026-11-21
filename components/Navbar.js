@@ -6,7 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { navLinks, site } from "@/lib/site";
 import { brand } from "@/lib/images";
 
-const EASE = [0.22, 1, 0.36, 1];
+const EASE = [0.16, 1, 0.3, 1];
 const HIDE_AFTER_PX = 400;
 const DESKTOP_QUERY = "(min-width: 1140px)";
 
@@ -20,7 +20,7 @@ export default function Navbar() {
   const [activeId, setActiveId] = useState("");
   const prefersReducedMotion = useReducedMotion();
 
-  // Compact the header once the page scrolls, and hide it while scrolling down.
+  // Solid background once the page scrolls; hide the bar while scrolling down.
   useEffect(() => {
     let lastY = window.scrollY;
 
@@ -36,7 +36,7 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Highlight the nav link for the section that is currently in view.
+  // Mark the nav link for the section in view.
   useEffect(() => {
     const sections = sectionIds.map((id) => document.getElementById(id)).filter(Boolean);
     const observer = new IntersectionObserver(
@@ -110,9 +110,9 @@ export default function Navbar() {
                   {link.label}
                   {isActive && (
                     <motion.span
-                      layoutId="nav-indicator"
-                      className="nav__indicator"
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      layoutId="nav-marker"
+                      className="nav__marker"
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
                     />
                   )}
                 </a>
@@ -122,7 +122,7 @@ export default function Navbar() {
 
           <div className="header__actions">
             <a href="#contact" className="btn btn--small header__cta" onClick={closeMenu}>
-              Contact Us
+              Contact us
             </a>
             <button
               type="button"
@@ -149,17 +149,18 @@ export default function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.35 }}
           >
             <ul className="mobile-menu__list">
               {mobileLinks.map((link, index) => (
                 <motion.li
                   key={link.href}
-                  initial={{ opacity: 0, x: -24 }}
+                  initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.08 + index * 0.05, duration: 0.45, ease: EASE }}
+                  transition={{ delay: 0.1 + index * 0.05, duration: 0.5, ease: EASE }}
                 >
                   <a href={link.href} onClick={closeMenu}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
                     {link.label}
                   </a>
                 </motion.li>

@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { ChatIcon, FacebookIcon, LinkedInIcon } from "@/components/Icons";
 import { navLinks, site } from "@/lib/site";
 import { brand } from "@/lib/images";
 
@@ -18,27 +17,6 @@ export default function Footer() {
             className="footer__logo"
           />
           <p className="footer__text">{site.description}</p>
-          <div className="footer__social">
-            <a
-              href={site.social.facebook}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Lucky Petroleum on Facebook"
-            >
-              <FacebookIcon />
-            </a>
-            <a
-              href={site.social.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Lucky Petroleum on LinkedIn"
-            >
-              <LinkedInIcon />
-            </a>
-            <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="Chat with us on WhatsApp">
-              <ChatIcon />
-            </a>
-          </div>
         </div>
 
         <nav aria-label="Footer">
@@ -80,6 +58,27 @@ export default function Footer() {
             <li>
               <a href={site.dealerFormUrl} target="_blank" rel="noopener noreferrer">
                 Dealer application form (PDF)
+              </a>
+            </li>
+          </ul>
+
+          <h2 className="footer__title" style={{ marginTop: "2.5rem" }}>
+            Follow
+          </h2>
+          <ul className="footer__list">
+            <li>
+              <a href={site.social.facebook} target="_blank" rel="noopener noreferrer">
+                Facebook
+              </a>
+            </li>
+            <li>
+              <a href={site.social.linkedin} target="_blank" rel="noopener noreferrer">
+                LinkedIn
+              </a>
+            </li>
+            <li>
+              <a href={site.whatsappUrl} target="_blank" rel="noopener noreferrer">
+                WhatsApp
               </a>
             </li>
           </ul>
