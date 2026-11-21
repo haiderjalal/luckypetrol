@@ -1,22 +1,36 @@
-import Reveal from "./Reveal";
-import SectionHead from "./SectionHead";
-import { news } from "@/lib/site";
+"use client";
 
+import { motion } from "framer-motion";
+import SectionHead from "@/components/SectionHead";
+import { media, site } from "@/lib/site";
+import { images } from "@/lib/images";
+
+const EASE = [0.22, 1, 0.36, 1];
+
+/** Brand film section. Keeps the News.js file name from the earlier layout. */
 export default function News() {
   return (
-    <section id="news" className="section">
-      <SectionHead eyebrow="Latest News" title="What's happening at Summit" />
+    <section id="media" className="section section--alt" aria-labelledby="media-title">
+      <div className="container">
+        <SectionHead title={media.title} titleId="media-title" />
 
-      <div className="news-grid">
-        {news.map((n, i) => (
-          <Reveal key={n.title} delay={i * 0.1}>
-            <article className="news-card">
-              <span className="news-date">{n.date}</span>
-              <h3>{n.title}</h3>
-              <p>{n.text}</p>
-            </article>
-          </Reveal>
-        ))}
+        <motion.figure
+          className="media__player"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.9, ease: EASE }}
+        >
+          <video
+            className="media__video"
+            src={images.brandFilm.src}
+            poster={images.brandFilm.poster}
+            controls
+            playsInline
+            preload="metadata"
+            aria-label={`${site.name} brand film`}
+          />
+        </motion.figure>
       </div>
     </section>
   );

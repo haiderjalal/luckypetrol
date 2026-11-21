@@ -1,6 +1,6 @@
-# Summit Petroleum (Next.js)
+# Lucky Petroleum (Next.js)
 
-An animated, fast, one-page petroleum company website built with Next.js and Framer Motion.
+A fast, one-page website for Lucky Petroleum with motion throughout: an animated hero, scroll reveals, counting prices and stats, a responsive header and an animated mobile menu.
 
 ## Run it
 
@@ -20,14 +20,16 @@ An animated, fast, one-page petroleum company website built with Next.js and Fra
 
 ## Customize
 
-- Brand name, phone, email, address, stats, products, timeline and news: `lib/site.js`
-- Stock photos: `lib/images.js`
-- Colors and spacing: `app/globals.css` (the `:root` block at the top)
-- Sections: `app/page.js` decides the order; each section lives in `components/`
+- Company copy, contact details, fuel rates, depots, services and stats: `lib/site.js`
+- Photo, logo and video paths: `lib/images.js` (the files live in `public/`)
+- Colours and spacing: `app/globals.css` (the `:root` block at the top)
+- Sections: `app/page.js` sets the order; each section lives in `components/`
 
-## Stock images
+## Brand assets
 
-`lib/images.js` uses LoremFlickr keyword photos so the site looks finished right away. For a commercial launch, replace them with photos from Unsplash (unsplash.com) or Pexels (pexels.com), which allow commercial use. Right-click a photo, choose "Copy image address", and paste it into `lib/images.js`.
+The logo, photos, favicon and brand film were copied from luckypetroleum.pk. Confirm you have the company's permission before publishing them.
+
+Fuel rates change often. Update `fuelPrices` in `lib/site.js` before each launch.
 
 ## Deploy (free)
 

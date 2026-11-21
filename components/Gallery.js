@@ -1,38 +1,34 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
-import SectionHead from "./SectionHead";
-import StockImage from "./StockImage";
-import { images } from "@/lib/images";
+import { retailGallery } from "@/lib/images";
 
-const gallery = [
-  { src: images.story, alt: "Oil pipeline", caption: "Pipelines", wide: true },
-  { src: images.station, alt: "Fuel station at night", caption: "Fuel stations" },
-  { src: images.tanker, alt: "Fuel tanker on the highway", caption: "Distribution" },
-  { src: images.rig, alt: "Offshore oil rig", caption: "Exploration" },
-  { src: images.pump, alt: "Fuel pump", caption: "Retail" },
-];
+const EASE = [0.22, 1, 0.36, 1];
 
 export default function Gallery() {
   return (
-    <section id="gallery" className="section">
-      <SectionHead eyebrow="Gallery" title="Behind the scenes of energy" />
-
-      <div className="gallery">
-        {gallery.map((item, i) => (
-          <motion.figure
-            key={item.caption}
-            className={`gallery-item ${item.wide ? "wide" : ""}`}
-            initial={{ clipPath: "inset(0 0 100% 0)" }}
-            whileInView={{ clipPath: "inset(0 0 0% 0)" }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 1, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <StockImage src={item.src} alt={item.alt} className="gallery-img" />
-            <figcaption>{item.caption}</figcaption>
-          </motion.figure>
-        ))}
-      </div>
-    </section>
+    <ul className="gallery" aria-label="Retail outlet photos">
+      {retailGallery.map((photo, index) => (
+        <motion.li
+          key={photo.src}
+          className="gallery__item"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, delay: index * 0.12, ease: EASE }}
+        >
+          <div className="gallery__frame">
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              fill
+              sizes="(min-width: 900px) 33vw, 100vw"
+              className="gallery__image"
+            />
+          </div>
+        </motion.li>
+      ))}
+    </ul>
   );
 }
