@@ -1,110 +1,174 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { site } from "@/lib/site";
+import Image from "next/image";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { navLinks, site } from "@/lib/site";
+import { brand } from "@/lib/images";
 
-const links = [
-  { href: "#story", label: "Our Story" },
-  { href: "#products", label: "Products" },
-  { href: "#gallery", label: "Gallery" },
-  { href: "#news", label: "News" },
-  { href: "#contact", label: "Contact" },
-];
+const EASE = [0.22, 1, 0.36, 1];
+const HIDE_AFTER_PX = 400;
+const DESKTOP_QUERY = "(min-width: 1140px)";
 
-function Logo() {
-  return (
-    <svg className="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
-      <defs>
-        <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#ffb703" />
-          <stop offset="1" stopColor="#ff6b35" />
-        </linearGradient>
-      </defs>
-      <motion.path
-        d="M20 4 C20 4 6 20 6 27 A14 14 0 0 0 34 27 C34 20 20 4 20 4 Z"
-        fill="none"
-        stroke="url(#logoGrad)"
-        strokeWidth="2.5"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1.6, ease: "easeInOut" }}
-      />
-    </svg>
-  );
-}
+const sectionIds = [...navLinks.map((link) => link.href.slice(1)), "contact"];
+const mobileLinks = [...navLinks, { href: "#contact", label: "Contact" }];
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeId, setActiveId] = useState("");
+  const prefersReducedMotion = useReducedMotion();
 
+  // Compact the header once the page scrolls, and hide it while scrolling down.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    let lastY = window.scrollY;
+
+    function handleScroll() {
+      const currentY = window.scrollY;
+      setIsScrolled(currentY > 24);
+      setIsHidden(currentY > lastY && currentY > HIDE_AFTER_PX);
+      lastY = currentY;
+    }
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const close = () => setOpen(false);
+  // Highlight the nav link for the section that is currently in view.
+  useEffect(() => {
+    const sections = sectionIds.map((id) => document.getElementById(id)).filter(Boolean);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveId(entry.target.id);
+        });
+      },
+      { rootMargin: "-45% 0px -50% 0px" }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  // Stop the page scrolling behind the open menu, and close the menu at desktop widths.
+  useEffect(() => {
+    if (!isMenuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const desktopQuery = window.matchMedia(DESKTOP_QUERY);
+    const closeOnDesktop = () => {
+      if (desktopQuery.matches) setIsMenuOpen(false);
+    };
+    desktopQuery.addEventListener("change", closeOnDesktop);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      desktopQuery.removeEventListener("change", closeOnDesktop);
+    };
+  }, [isMenuOpen]);
+
+  function closeMenu() {
+    setIsMenuOpen(false);
+  }
+
+  const isHeaderHidden = isHidden && !isMenuOpen;
 
   return (
-    <motion.header
-      className={`navbar ${scrolled ? "scrolled" : ""}`}
-      initial={{ y: -90, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-    >
-      <a href="#top" className="brand" onClick={close}>
-        <Logo />
-        <span>{site.name}</span>
-      </a>
-
-      <nav className="desktop-nav">
-        {links.map((l) => (
-          <a key={l.href} href={l.href}>
-            {l.label}
-          </a>
-        ))}
-      </nav>
-
-      <a href="#contact" className="btn btn-small nav-cta">
-        Get a Quote
-      </a>
-
-      <button
-        className="menu-toggle"
-        aria-label="Open menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+    <>
+      <motion.header
+        className={`header ${isScrolled ? "is-scrolled" : ""}`}
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: isHeaderHidden ? "-100%" : "0%", opacity: 1 }}
+        transition={{ duration: prefersReducedMotion ? 0 : 0.6, ease: EASE }}
       >
-        <span />
-        <span />
-      </button>
+        <div className="header__inner">
+          <a href="#top" className="brand" aria-label={`${site.name} home`} onClick={closeMenu}>
+            <Image
+              src={brand.logo.src}
+              alt={brand.logo.alt}
+              width={brand.logo.width}
+              height={brand.logo.height}
+              priority
+              className="brand__logo"
+            />
+          </a>
+
+          <nav className="nav" aria-label="Main">
+            {navLinks.map((link) => {
+              const isActive = activeId === link.href.slice(1);
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className={`nav__link ${isActive ? "is-active" : ""}`}
+                  aria-current={isActive ? "location" : undefined}
+                >
+                  {link.label}
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-indicator"
+                      className="nav__indicator"
+                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                </a>
+              );
+            })}
+          </nav>
+
+          <div className="header__actions">
+            <a href="#contact" className="btn btn--small header__cta" onClick={closeMenu}>
+              Contact Us
+            </a>
+            <button
+              type="button"
+              className="menu-btn"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
+        </div>
+      </motion.header>
 
       <AnimatePresence>
-        {open && (
+        {isMenuOpen && (
           <motion.nav
-            className="mobile-nav"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.35 }}
+            id="mobile-menu"
+            className="mobile-menu"
+            aria-label="Mobile"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            {links.map((l, i) => (
-              <motion.a
-                key={l.href}
-                href={l.href}
-                onClick={close}
-                initial={{ x: -24, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                {l.label}
-              </motion.a>
-            ))}
+            <ul className="mobile-menu__list">
+              {mobileLinks.map((link, index) => (
+                <motion.li
+                  key={link.href}
+                  initial={{ opacity: 0, x: -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.08 + index * 0.05, duration: 0.45, ease: EASE }}
+                >
+                  <a href={link.href} onClick={closeMenu}>
+                    {link.label}
+                  </a>
+                </motion.li>
+              ))}
+            </ul>
+            <p className="mobile-menu__foot">{site.phones[0].value}</p>
           </motion.nav>
         )}
       </AnimatePresence>
-    </motion.header>
+    </>
   );
 }

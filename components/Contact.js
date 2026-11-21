@@ -2,81 +2,147 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import SectionHead from "./SectionHead";
-import { site } from "@/lib/site";
+import SectionHead from "@/components/SectionHead";
+import { ChatIcon, MailIcon, PhoneIcon, PinIcon } from "@/components/Icons";
+import { contact, site } from "@/lib/site";
+
+const EASE = [0.22, 1, 0.36, 1];
+const MESSAGE_LIMIT = contact.messageLimit;
+const initialForm = { name: "", email: "", phone: "", message: "" };
+
+const infoItems = [
+  { icon: PinIcon, label: "Address", value: site.address },
+  { icon: MailIcon, label: "Email", value: site.email, href: `mailto:${site.email}` },
+  { icon: PhoneIcon, label: site.phones[0].label, value: site.phones[0].value, href: site.phones[0].href },
+  { icon: PhoneIcon, label: "Office phone", value: site.phones[1].value },
+  { icon: ChatIcon, label: "WhatsApp", value: site.phones[0].value, href: site.whatsappUrl },
+];
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [form, setForm] = useState(initialForm);
 
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+  function handleSubmit(event) {
+    event.preventDefault();
     const subject = encodeURIComponent(`Website enquiry from ${form.name}`);
-    const body = encodeURIComponent(`${form.message}\n\nFrom: ${form.name} (${form.email})`);
+    const body = encodeURIComponent(
+      `${form.message}\n\nName: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone}`
+    );
     window.location.href = `mailto:${site.email}?subject=${subject}&body=${body}`;
   }
 
-  const infoCards = [
-    ["Phone", site.phone],
-    ["Email", site.email],
-    ["Office", site.address],
-  ];
-
   return (
-    <section id="contact" className="section">
-      <SectionHead
-        eyebrow="Contact"
-        title="Let's fuel your next move"
-        text="Dealers, business customers and partners: send us a message and our team will get back to you."
-      />
+    <section id="contact" className="section" aria-labelledby="contact-title">
+      <div className="container contact">
+        <div className="contact__intro">
+          <SectionHead title={contact.title} titleId="contact-title" text={contact.text} />
 
-      <div className="contact-wrap">
-        <div className="contact-info">
-          {infoCards.map(([label, value], i) => (
-            <motion.div
-              key={label}
-              className="info-card"
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: i * 0.1 }}
-            >
-              <span>{label}</span>
-              <strong>{value}</strong>
-            </motion.div>
-          ))}
+          <div className="contact__info">
+            {infoItems.map((item, index) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={`${item.label}-${item.value}`}
+                  className="info-card"
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.5 }}
+                  transition={{ duration: 0.6, delay: index * 0.08, ease: EASE }}
+                >
+                  <span className="info-card__icon">
+                    <Icon />
+                  </span>
+                  <div>
+                    <p className="info-card__label">{item.label}</p>
+                    <p className="info-card__value">
+                      {item.href ? (
+                        <a
+                          href={item.href}
+                          {...(item.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                        >
+                          {item.value}
+                        </a>
+                      ) : (
+                        item.value
+                      )}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
 
         <motion.form
+          className="card form"
           onSubmit={handleSubmit}
-          className="form"
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.15, ease: EASE }}
         >
-          <input name="name" placeholder="Your name" value={form.name} onChange={handleChange} required />
-          <input
-            name="email"
-            type="email"
-            placeholder="Your email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-          <textarea
-            name="message"
-            placeholder="Your message"
-            rows={4}
-            value={form.message}
-            onChange={handleChange}
-            required
-          />
-          <button type="submit" className="btn">
-            Send Message
+          <div className="form__row">
+            <div className="field">
+              <label htmlFor="contact-name">Full name</label>
+              <input
+                id="contact-name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="contact-email">Email</label>
+              <input
+                id="contact-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="contact-phone">Phone number</label>
+            <input
+              id="contact-phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="field">
+            <label htmlFor="contact-message">Message</label>
+            <textarea
+              id="contact-message"
+              name="message"
+              rows={5}
+              maxLength={MESSAGE_LIMIT}
+              value={form.message}
+              onChange={handleChange}
+              aria-describedby="contact-message-count"
+              required
+            />
+            <p id="contact-message-count" className="field__count">
+              {form.message.length} / {MESSAGE_LIMIT}
+            </p>
+          </div>
+
+          <button type="submit" className="btn form__submit">
+            Send message
           </button>
         </motion.form>
       </div>

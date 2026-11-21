@@ -1,47 +1,46 @@
 "use client";
 
 import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import SectionHead from "./SectionHead";
-import { site, timeline } from "@/lib/site";
+import { motion, useInView } from "framer-motion";
+import SectionHead from "@/components/SectionHead";
+import { journey } from "@/lib/site";
+
+const EASE = [0.22, 1, 0.36, 1];
 
 export default function Story() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start 70%", "end 70%"],
-  });
-  const fill = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const timelineRef = useRef(null);
+  const isInView = useInView(timelineRef, { once: true, amount: 0.3 });
 
   return (
-    <section id="story" className="section">
-      <SectionHead eyebrow="Our Story" title="From the earth to your engine" text={site.storyLead} />
+    <section id="journey" className="section" aria-labelledby="journey-title">
+      <div className="container">
+        <SectionHead title={journey.title} titleId="journey-title" />
 
-      <div className="timeline" ref={ref}>
-        <div className="timeline-track">
-          <motion.div className="timeline-fill" style={{ scaleY: fill }} />
-        </div>
+        <div ref={timelineRef} className="timeline">
+          <span className="timeline__track" aria-hidden="true">
+            <motion.span
+              className="timeline__progress"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: isInView ? 1 : 0 }}
+              transition={{ duration: 1.8, ease: EASE }}
+            />
+          </span>
 
-        {timeline.map((step, i) => {
-          const side = i % 2 === 0 ? "left" : "right";
-          return (
-            <motion.div
-              key={step.title}
-              className={`timeline-item ${side}`}
-              initial={{ opacity: 0, x: side === "left" ? -50 : 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          {journey.items.map((item, index) => (
+            <motion.article
+              key={`${item.year}-${item.title}`}
+              className="milestone"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: isInView ? 1 : 0, y: isInView ? 0 : 30 }}
+              transition={{ duration: 0.7, delay: 0.3 + index * 0.25, ease: EASE }}
             >
-              <span className="timeline-dot" />
-              <div className="timeline-card">
-                <span className="step-no">Step {step.year}</span>
-                <h3>{step.title}</h3>
-                <p>{step.text}</p>
-              </div>
-            </motion.div>
-          );
-        })}
+              <span className="milestone__dot" aria-hidden="true" />
+              <p className="milestone__year">{item.year}</p>
+              <h3 className="milestone__title">{item.title}</h3>
+              <p className="milestone__text">{item.text}</p>
+            </motion.article>
+          ))}
+        </div>
       </div>
     </section>
   );
