@@ -21,7 +21,7 @@ export async function GET(request) {
   }
 
   try {
-    const { filename, csv } = buildCsvExport(report, {
+    const { filename, csv } = await buildCsvExport(report, {
       from: searchParams.get("from") ?? "",
       to: searchParams.get("to") ?? "",
     });

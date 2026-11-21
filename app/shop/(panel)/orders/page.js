@@ -23,7 +23,7 @@ export default async function OrdersPage({ searchParams }) {
   const status = readParam(params.status);
   const search = readParam(params.search);
   const page = readParam(params.page);
-  const result = listOrderQueue({ status, search, page });
+  const result = await listOrderQueue({ status, search, page });
 
   const tabs = [{ value: "", label: "All orders" }, ...Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => ({ value, label }))];
 

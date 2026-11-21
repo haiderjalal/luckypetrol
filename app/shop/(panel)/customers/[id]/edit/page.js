@@ -25,7 +25,7 @@ export default async function EditCustomerPage({ params }) {
 
   let detail;
   try {
-    detail = getCustomerDetail(customerId);
+    detail = await getCustomerDetail(customerId);
   } catch (error) {
     if (error?.code === "not_found") {
       notFound();

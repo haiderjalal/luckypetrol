@@ -60,25 +60,22 @@ Set up `.env.local` (copy `.env.example`). The session secret must be at least 3
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Demo data: `npm run shop:seed` adds clearly labelled DEMO records to an empty database. It refuses to run if customers already exist. To remove demo data, stop the server and delete `data/shop.sqlite` (and any `-wal` and `-shm` files next to it).
+Demo data: `npm run shop:seed` adds clearly labelled DEMO records to an empty database. It refuses to run if customers already exist. To remove demo data, reset the test database with the statement in section 8 of `docs/supabase-setup.md`.
 
-Tests: `npm test` runs the business-rule suite (money, dates, totals, phone numbers, sessions, CSV) and an end-to-end flow on an in-memory database: order, credit override, dispatch, short delivery, invoice, FIFO payments, advances, void, cancellation, dips, aging and ledger reconciliation.
+Tests: `npm test` runs the business-rule suite (money, dates, totals, phone numbers, sessions, CSV) and an end-to-end flow on the test database named by `SHOP_TEST_DATABASE_URL`: order, credit override, dispatch, short delivery, invoice, FIFO payments, advances, void, cancellation, dips, aging and ledger reconciliation.
 
 ## Hosting
 
-The shop needs a server with a writable disk, because its data lives in a SQLite file. Vercel's serverless functions cannot keep that file, so the shop cannot run there.
+The data lives in Supabase Postgres, so the shop can run on Vercel. The setup, the environment variables and the migration are in `docs/supabase-setup.md`.
 
-- On Vercel (any environment where `VERCEL` is set), `/shop`, `/api/shop` and the public invoice links under `/share` return "Not found". This is deliberate: without it, a signed-in user gets an error page once the database cannot be opened.
-- To turn the shop on there anyway, set `SHOP_ENABLED=true`. Only do this after storage is solved, because the data would not persist.
+- On Vercel (any environment where `VERCEL` is set), `/shop`, `/api/shop` and the public invoice links under `/share` return "Not found" unless `SHOP_ENABLED=true` is set. Set it only after the database works in that environment.
 - Locally, and on any server you control, the shop is always on.
-
-The sensible options are: run the shop on a machine you control, or move its storage to a managed database after the change is approved.
 
 ## Data and backups
 
-- Database: `data/shop.sqlite` (SQLite with WAL). Git-ignored. Set `SHOP_DB_PATH` to move it.
-- Back up while the server is stopped, or with `sqlite3 data/shop.sqlite ".backup backup.sqlite"`, and keep copies off the machine.
-- Schema changes go through numbered migrations in `lib/shop/migrations.js`.
+- Database: Supabase Postgres, in the `shop` schema. The schema is in `supabase/migrations/`. The app reads `SHOP_DATABASE_URL`. Tests and the demo seed read `SHOP_TEST_DATABASE_URL` and refuse the live database.
+- Backups: the Pro plan keeps daily backups for 7 days. Also keep off-site `pg_dump` copies and test a restore (see the setup guide).
+- Schema changes: add a new numbered migration in `supabase/migrations/`. Never edit a migration that has already been applied.
 
 ## Security
 
@@ -87,7 +84,7 @@ The sensible options are: run the shop on a machine you control, or move its sto
 - Every page under `/shop` and every `/api/shop` route requires a valid session, checked by middleware and again in the layout and every server action.
 - Inputs are validated on the server with zod before any write. Database access uses bound parameters only.
 - Public invoice links are unguessable and show one invoice. Treat them as sensitive: anyone with the link can read it.
-- Lockout is per client address and username, in memory. If the app is behind a proxy, configure it to pass the real client address; `X-Forwarded-For` is trusted for this purpose.
+- Lockout is per client address and username. Failures are stored in the database as hashes (`shop.login_attempts`), so every server instance shares the count. If the app is behind a proxy, configure it to pass the real client address; `X-Forwarded-For` is trusted for this purpose.
 - Serve it over HTTPS in production. Cookies are marked Secure in production builds.
 
 ## Limitations (not built yet)
@@ -96,7 +93,7 @@ The sensible options are: run the shop on a machine you control, or move its sto
 - **PDFs**: documents print through the browser (Print, then Save as PDF). There is no server-side PDF generation.
 - **Tax filing**: no FBR digital invoicing integration, no sales tax return reports, no e-invoice numbering rules.
 - **Users**: one shared login; no roles, no per-user permissions.
-- **Deployment and storage**: SQLite is a local file. Vercel's serverless filesystem does not keep it. Production needs a decision: a server with a persistent disk, or a managed database. Supabase is the project's standard, but moving to it needs your approval.
+- **Deployment and storage**: the database is Supabase Postgres. Production needs the environment variables and the `bom1` function region from `docs/supabase-setup.md`, and `SHOP_ENABLED=true` once the converted code is live.
 - **Orders**: one delivery per order; no partial dispatch across several tankers; no proforma or advance invoices; no combined monthly invoices.
 - **Payments**: allocation is oldest-first only; you cannot pick which invoice a receipt pays.
 - **Opening balances**: no import from existing ledgers yet. Enter opening invoices through a data migration before go-live.
@@ -111,7 +108,7 @@ A background research pass on Pakistani oil marketing operations, OGRA and FBR r
 
 1. Confirm the rules above with the accountant and the operations lead, and enter the real NTN, STRN and bank details in Settings.
 2. Change the shop password; add named staff accounts if more than one person will use it.
-3. Decide the production hosting and database, and get approval for it.
+3. Choose the Supabase region and plan, then turn the shop on in Production (`SHOP_ENABLED=true`) after the Preview test passes.
 4. Set up WhatsApp Business API access if automatic sending is wanted.
 5. Import opening balances and the first real stock counts.
 6. Run a short pilot with one depot and a few customers before using it for every order.

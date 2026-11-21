@@ -17,7 +17,7 @@ import {
 } from "../lib/shop/dates.js";
 import { amountInWords, formatLitres, formatPaisa, parseLitres, parseRupeesToPaisa } from "../lib/shop/money.js";
 import { normalisePakistaniMobile, formatMobileForDisplay } from "../lib/shop/phone.js";
-import { clearLoginFailures, getLockoutMinutes, recordLoginFailure } from "../lib/shop/rateLimit.js";
+import { lockoutMinutes } from "../lib/shop/rateLimit.js";
 import { createSessionToken, verifySessionToken } from "../lib/shop/session.js";
 import { basisPointsToPercent, computeInvoiceTotals, percentToBasisPoints } from "../lib/shop/totals.js";
 import { buildWhatsAppLink } from "../lib/shop/whatsapp.js";
@@ -208,15 +208,10 @@ describe("sessions and login throttling", () => {
   });
 
   it("locks a client out after five failures and releases it after the window", () => {
-    const key = "test-client";
     const start = Date.parse("2026-11-21T08:00:00Z");
-    clearLoginFailures(key);
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      recordLoginFailure(key, start + attempt * 1000);
-    }
+    const failures = [0, 1, 2, 3, 4].map((attempt) => start + attempt * 1000);
 
-    assert.ok(getLockoutMinutes(key, start + 5000) > 0);
-    assert.equal(getLockoutMinutes(key, start + 16 * 60 * 1000), 0);
-    clearLoginFailures(key);
+    assert.ok(lockoutMinutes(failures, start + 5000) > 0);
+    assert.equal(lockoutMinutes(failures, start + 16 * 60 * 1000), 0);
   });
 });

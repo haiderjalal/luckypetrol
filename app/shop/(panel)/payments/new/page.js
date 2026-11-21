@@ -19,7 +19,7 @@ export const metadata = {
 export default async function NewPaymentPage({ searchParams }) {
   const params = await searchParams;
   const today = todayIso();
-  const customers = getCustomerOptions();
+  const customers = await getCustomerOptions();
   const customerOptions = selectOptions(
     Object.fromEntries(customers.map((customer) => [String(customer.id), `${customer.name} (${customer.code})`])),
     "Choose a customer",

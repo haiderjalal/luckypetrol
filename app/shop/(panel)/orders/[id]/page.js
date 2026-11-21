@@ -36,7 +36,7 @@ export default async function OrderDetailPage({ params }) {
 
   let detail;
   try {
-    detail = getOrderDetail(orderId);
+    detail = await getOrderDetail(orderId);
   } catch (error) {
     if (error?.code === "not_found") {
       notFound();
@@ -46,8 +46,8 @@ export default async function OrderDetailPage({ params }) {
 
   const { order, items, balancePaisa, openOrdersPaisa, creditAvailablePaisa, invoices, delivery } = detail;
   const activeInvoices = invoices.filter((invoice) => invoice.status === "issued");
-  const company = getSettings().company;
-  const depots = getDispatchBoard().depots;
+  const company = (await getSettings()).company;
+  const depots = (await getDispatchBoard()).depots;
   const message = buildOrderMessage({ order, items, company });
 
   return (

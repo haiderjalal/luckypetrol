@@ -24,11 +24,11 @@ const BUCKET_LABELS = {
   "90+": "Over 90 days",
 };
 
-export default function LedgerPage() {
+export default async function LedgerPage() {
   const today = todayIso();
-  const report = getAgingReport(today);
+  const report = await getAgingReport(today);
   const overdueTotal = report.totals.buckets["1-30"] + report.totals.buckets["31-60"] + report.totals.buckets["61-90"] + report.totals.buckets["90+"];
-  const customers = getCustomerOptions();
+  const customers = await getCustomerOptions();
 
   return (
     <>

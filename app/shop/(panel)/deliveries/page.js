@@ -15,9 +15,9 @@ export const metadata = {
   title: "Dispatch",
 };
 
-export default function DispatchPage() {
+export default async function DispatchPage() {
   const today = todayIso();
-  const board = getDispatchBoard();
+  const board = await getDispatchBoard();
 
   return (
     <>

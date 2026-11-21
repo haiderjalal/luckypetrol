@@ -26,7 +26,7 @@ export default async function CustomersPage({ searchParams }) {
     status: readParam(params.status),
     page: readParam(params.page),
   };
-  const result = listCustomerDirectory(filters);
+  const result = await listCustomerDirectory(filters);
   const query = { search: filters.search, type: filters.customerType, status: filters.status };
 
   return (

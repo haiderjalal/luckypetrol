@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import { getSessionSecret, getShopUsername, isShopConfigured } from "@/lib/shop/config.js";
 import { verifyCredentials } from "@/lib/shop/credentials.js";
 import { logger } from "@/lib/shop/logger.js";
-import { clearLoginFailures, getLockoutMinutes, recordLoginFailure } from "@/lib/shop/rateLimit.js";
+import { clearSignInFailures, getSignInLockoutMinutes, recordSignInFailure } from "@/lib/shop/services/signInThrottle.js";
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/lib/shop/session.js";
 
 const DEFAULT_LANDING_PATH = "/shop";
@@ -39,19 +39,19 @@ export async function loginAction(input) {
   }
 
   const key = await clientKey(username);
-  const minutesLeft = getLockoutMinutes(key);
+  const minutesLeft = await getSignInLockoutMinutes(key);
   if (minutesLeft > 0) {
     return { ok: false, message: `Too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.` };
   }
 
   const isValid = await verifyCredentials(username, password);
   if (!isValid) {
-    recordLoginFailure(key);
+    await recordSignInFailure(key);
     logger.info("Shop sign-in failed");
     return { ok: false, message: "That username or password is not correct." };
   }
 
-  clearLoginFailures(key);
+  await clearSignInFailures(key);
   const token = await createSessionToken({ username: getShopUsername(), secret: getSessionSecret() });
   const store = await cookies();
   store.set(SESSION_COOKIE_NAME, token, {

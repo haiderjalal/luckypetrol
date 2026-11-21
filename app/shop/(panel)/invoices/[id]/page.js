@@ -35,7 +35,7 @@ export default async function InvoiceDetailPage({ params }) {
 
   let detail;
   try {
-    detail = getInvoiceDetail(invoiceId);
+    detail = await getInvoiceDetail(invoiceId);
   } catch (error) {
     if (error?.code === "not_found") {
       notFound();
